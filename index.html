@@ -622,7 +622,7 @@
 
                 // Filter data based on current selections
                 let availableData = allData.filter(r => {
-                    const salesAmount = parseFloat((r['$R & PROY exp pesos'] || '0').toString().replace(/[^\d.-]/g, '')) || 0;
+                    const salesAmount = parseFloat((r['TOTAL VENTA *EXP COP*'] || '0').toString().replace(/[^\d.-]/g, '')) || 0;
                     if (salesAmount <= 0 || r.ESTADO === 'Retirado') return false;
 
                     // Apply year filter if selected
@@ -665,7 +665,7 @@
 
                 // Filter data based on current selections
                 let availableData = allData.filter(r => {
-                    const salesAmount = parseFloat((r['$R & PROY exp pesos'] || '0').toString().replace(/[^\d.-]/g, '')) || 0;
+                    const salesAmount = parseFloat((r['TOTAL VENTA *EXP COP*'] || '0').toString().replace(/[^\d.-]/g, '')) || 0;
                     if (salesAmount <= 0 || r.ESTADO === 'Retirado') return false;
 
                     // Apply year filter if selected
@@ -729,7 +729,7 @@
 
             let filtered = allData.filter(r => {
                 // Must have positive sales amount and not be retired
-                const salesAmount = parseFloat((r['$R & PROY exp pesos'] || '0').toString().replace(/[^\d.-]/g, '')) || 0;
+                const salesAmount = parseFloat((r['TOTAL VENTA *EXP COP*'] || '0').toString().replace(/[^\d.-]/g, '')) || 0;
                 if (salesAmount <= 0 || r.ESTADO === 'Retirado') return false;
 
                 // Parse date from AJUSTES VENCIMIENTO (format: M/D/YYYY)
@@ -759,7 +759,7 @@
                 return isNaN(num) ? 0 : num;
             };
 
-            const ventas = filtered.reduce((s, r) => s + parseNumber(r['$R & PROY exp pesos']), 0);
+            const ventas = filtered.reduce((s, r) => s + parseNumber(r['TOTAL VENTA *EXP COP*']), 0);
             const recaudo = filtered.reduce((s, r) => s + parseNumber(r['NETO EXPRESADO EN PESOS']), 0);
             const cartera = filtered.reduce((s, r) => s + parseNumber(r['*A* PENDIENTE RECAUDO EXPRESADO EN PESOS']), 0);
             const programas = new Set(filtered.map(r => r.PROGRAMA)).size;
@@ -782,7 +782,7 @@
 
             // Calculate sales by program
             const byProgram = {};
-            filtered.forEach(r => { byProgram[r.PROGRAMA] = (byProgram[r.PROGRAMA] || 0) + parseNumber(r['$R & PROY exp pesos']); });
+            filtered.forEach(r => { byProgram[r.PROGRAMA] = (byProgram[r.PROGRAMA] || 0) + parseNumber(r['TOTAL VENTA *EXP COP*']); });
 
             // Filter out programs with zero sales and sort by sales amount
             const programsWithSales = Object.keys(byProgram)
@@ -882,7 +882,7 @@
                 return isNaN(num) ? 0 : num;
             };
 
-            const vendido = data.reduce((s, r) => s + parseNumber(r['$R & PROY exp pesos']), 0);
+            const vendido = data.reduce((s, r) => s + parseNumber(r['TOTAL VENTA *EXP COP*']), 0);
             const recaudado = data.reduce((s, r) => s + parseNumber(r['NETO EXPRESADO EN PESOS']), 0);
             const pendiente = data.reduce((s, r) => s + parseNumber(r['*A* PENDIENTE RECAUDO EXPRESADO EN PESOS']), 0);
 
@@ -904,7 +904,7 @@
 
             document.querySelector('#tablePagos tbody').innerHTML = Object.keys(byProgram).map(p => {
                 const d = data.filter(r => r.PROGRAMA === p);
-                const v = d.reduce((s, r) => s + parseNumber(r['$R & PROY exp pesos']), 0);
+                const v = d.reduce((s, r) => s + parseNumber(r['TOTAL VENTA *EXP COP*']), 0);
                 const re = d.reduce((s, r) => s + parseNumber(r['NETO EXPRESADO EN PESOS']), 0);
                 const pe = d.reduce((s, r) => s + parseNumber(r['*A* PENDIENTE RECAUDO EXPRESADO EN PESOS']), 0);
                 const porcentajePagado = (re/v)*100;
@@ -964,12 +964,12 @@
             });
 
             // Ventas totales de la empresa (todas las ventas, sin importar campaña)
-            const ventasTotalEmpresa = allData.filter(r => r.ESTADO !== 'Retirado').reduce((s, r) => s + parseNumber(r['$R & PROY exp pesos']), 0);
+            const ventasTotalEmpresa = allData.filter(r => r.ESTADO !== 'Retirado').reduce((s, r) => s + parseNumber(r['TOTAL VENTA *EXP COP*']), 0);
 
             // Ventas del conjunto filtrado (con campañas válidas)
-            const ventasTotal = filtered.reduce((s, r) => s + parseNumber(r['$R & PROY exp pesos']), 0);
+            const ventasTotal = filtered.reduce((s, r) => s + parseNumber(r['TOTAL VENTA *EXP COP*']), 0);
             const recaudoTotal = filtered.reduce((s, r) => s + parseNumber(r['NETO EXPRESADO EN PESOS']), 0);
-            const ventasCamp = filtered.filter(r => r['CAMPAÑA( Juli)']).reduce((s, r) => s + parseNumber(r['$R & PROY exp pesos']), 0);
+            const ventasCamp = filtered.filter(r => r['CAMPAÑA( Juli)']).reduce((s, r) => s + parseNumber(r['TOTAL VENTA *EXP COP*']), 0);
 
             // Efectividad: impacto de las campañas vs ventas totales de la empresa
             const efectividad = ventasTotalEmpresa > 0 ? (ventasCamp / ventasTotalEmpresa) * 100 : 0;
@@ -991,7 +991,7 @@
             filtered.forEach(r => {
                 if (!r['CAMPAÑA( Juli)']) return;
                 if (!byCamp[r['CAMPAÑA( Juli)']]) byCamp[r['CAMPAÑA( Juli)']] = 0;
-                byCamp[r['CAMPAÑA( Juli)']] += parseNumber(r['$R & PROY exp pesos']);
+                byCamp[r['CAMPAÑA( Juli)']] += parseNumber(r['TOTAL VENTA *EXP COP*']);
             });
             const allCamps = Object.keys(byCamp).sort((a, b) => byCamp[b] - byCamp[a]);
 
