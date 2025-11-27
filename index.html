@@ -728,9 +728,8 @@
             toDate.setHours(23, 59, 59, 999);
 
             let filtered = allData.filter(r => {
-                // Must have positive sales amount and not be retired
-                const salesAmount = parseFloat((r['TOTAL VENTA *EXP COP*'] || '0').toString().replace(/[^\d.-]/g, '')) || 0;
-                if (salesAmount <= 0 || r.ESTADO === 'Retirado') return false;
+                // Exclude retired records, but include all others (even with zero sales)
+                if (r.ESTADO === 'Retirado') return false;
 
                 // Parse date from AJUSTES VENCIMIENTO (format: M/D/YYYY)
                 if (r['AJUSTES VENCIMIENTO']) {
@@ -761,7 +760,12 @@
 
             const ventas = filtered.reduce((s, r) => s + parseNumber(r['TOTAL VENTA *EXP COP*']), 0);
             const recaudo = filtered.reduce((s, r) => s + parseNumber(r['NETO EXPRESADO EN PESOS']), 0);
-            const cartera = filtered.reduce((s, r) => s + parseNumber(r['*A* PENDIENTE RECAUDO EXPRESADO EN PESOS']), 0);
+
+            // Cartera pendiente: aplicar los mismos filtros que ventas y recaudos
+            const cartera = filtered
+                .filter(r => r['ESTADO PAGOS'] === 'PENDIENTE')
+                .reduce((s, r) => s + parseNumber(r['*A* PENDIENTE RECAUDO EXPRESADO EN PESOS']), 0);
+
             const programas = new Set(filtered.map(r => r.PROGRAMA)).size;
             const estudiantes = new Set(filtered.map(r => r.ESTUDIANTE)).size;
             const ticket = estudiantes > 0 ? ventas / estudiantes : 0;
