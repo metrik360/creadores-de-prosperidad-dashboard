@@ -1005,18 +1005,35 @@
                 validationByEstAndProg[key].count += 1;
             });
 
-            document.querySelector('#tableValidacionVentas tbody').innerHTML = Object.values(validationByEstAndProg).map(row => {
-                const difference = row.totalVenta === 0 ? 0 : ((row.recaudoR - row.totalVenta) / row.totalVenta) * 100;
-                const status = getValidationStatus(row.totalVenta, row.recaudoR);
-                return `<tr>
-                    <td>${row.estudiante}</td>
-                    <td>${row.programa}</td>
-                    <td>${fmt(row.totalVenta)}</td>
-                    <td>${fmt(row.recaudoR)}</td>
-                    <td>${row.totalVenta === 0 ? '-' : (difference >= 0 ? '+' : '') + difference.toFixed(2)}%</td>
-                    <td><span style="background:${status.color};color:white;padding:4px 8px;border-radius:3px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;"><i class="fas fa-${status.icon === '✓' ? 'check-circle' : status.icon === '!' ? 'exclamation-triangle' : 'times-circle'}"></i>${status.label}</span></td>
-                </tr>`;
-            }).join('');
+            // Group by estudiante first
+            const groupedByEstudiante = {};
+            Object.values(validationByEstAndProg).forEach(row => {
+                if (!groupedByEstudiante[row.estudiante]) {
+                    groupedByEstudiante[row.estudiante] = [];
+                }
+                groupedByEstudiante[row.estudiante].push(row);
+            });
+
+            // Generate table rows with estudiante grouping
+            const tableHTML = Object.entries(groupedByEstudiante)
+                .sort(([estA], [estB]) => estA.localeCompare(estB))
+                .map(([estudiante, rows]) => {
+                    return rows.map((row, index) => {
+                        const difference = row.totalVenta === 0 ? 0 : ((row.recaudoR - row.totalVenta) / row.totalVenta) * 100;
+                        const status = getValidationStatus(row.totalVenta, row.recaudoR);
+                        const showEstudianteName = index === 0;
+                        return `<tr>
+                            <td>${showEstudianteName ? estudiante : ''}</td>
+                            <td>${row.programa}</td>
+                            <td>${fmt(row.totalVenta)}</td>
+                            <td>${fmt(row.recaudoR)}</td>
+                            <td>${row.totalVenta === 0 ? '-' : (difference >= 0 ? '+' : '') + difference.toFixed(2)}%</td>
+                            <td><span style="background:${status.color};color:white;padding:4px 8px;border-radius:3px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;"><i class="fas fa-${status.icon === '✓' ? 'check-circle' : status.icon === '!' ? 'exclamation-triangle' : 'times-circle'}"></i>${status.label}</span></td>
+                        </tr>`;
+                    }).join('');
+                }).join('');
+
+            document.querySelector('#tableValidacionVentas tbody').innerHTML = tableHTML;
 
             if (charts['chartEstProgramas']) charts['chartEstProgramas'].destroy();
             charts['chartEstProgramas'] = new Chart(document.getElementById('chartEstProgramas'), {
