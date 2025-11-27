@@ -196,6 +196,10 @@
                     <div class="table-header"><h3>Historial de Pagos</h3></div>
                     <table id="tablePagos"><thead><tr><th>Programa</th><th>Venta Total</th><th>Pagado</th><th>Pendiente</th><th>% Pagado</th><th>Estado</th></tr></thead><tbody></tbody></table>
                 </div>
+                <div class="table-container" style="margin-top: 20px;">
+                    <div class="table-header"><h3>Validación de Consistencia de Ventas</h3></div>
+                    <table id="tableValidacionVentas"><thead><tr><th>Estudiante</th><th>Programa</th><th>TOTAL VENTA *EXP COP*</th><th>$R & PROY exp pesos</th><th>Diferencia (%)</th><th>Estado</th></tr></thead><tbody></tbody></table>
+                </div>
             </div>
 
             <div id="marketing" class="sheet">
@@ -914,6 +918,66 @@
                 const porcentajePagado = (re/v)*100;
                 const estaPagado = pe === 0;
                 return `<tr><td>${p}</td><td>${fmt(v)}</td><td>${fmt(re)}</td><td>${fmt(pe)}</td><td>${pct(porcentajePagado)}</td><td><span style="background:${estaPagado?'#27AE60':'#E74C3C'};color:white;padding:2px 6px;border-radius:3px;font-size:11px;">${estaPagado?'Pagado':'Pendiente'}</span></td></tr>`;
+            }).join('');
+
+            // Helper function to get validation icon and status
+            const getValidationStatus = (totalVenta, recaudoR) => {
+                if (totalVenta === 0) return { icon: '-', color: '#999', label: 'Sin datos' };
+                const difference = ((recaudoR - totalVenta) / totalVenta) * 100;
+                if (difference === 0) {
+                    return { icon: '✓', color: '#27AE60', label: 'Válido' };
+                } else if (difference >= -5 && difference <= 5) {
+                    return { icon: '!', color: '#F39C12', label: 'Margen ±5%' };
+                } else {
+                    return { icon: '✕', color: '#E74C3C', label: 'Inconsistencia' };
+                }
+            };
+
+            // Tabla de validación de consistencia de ventas
+            const validationRows = data.map(r => {
+                const totalVenta = parseNumber(r['TOTAL VENTA *EXP COP*']);
+                const recaudoR = parseNumber(r['$R & PROY exp pesos']);
+                const difference = totalVenta === 0 ? 0 : ((recaudoR - totalVenta) / totalVenta) * 100;
+                const status = getValidationStatus(totalVenta, recaudoR);
+                return {
+                    estudiante: r.ESTUDIANTE,
+                    programa: r.PROGRAMA,
+                    totalVenta,
+                    recaudoR,
+                    difference,
+                    status
+                };
+            });
+
+            // Group by estudiante and programa
+            const validationByEstAndProg = {};
+            validationRows.forEach(row => {
+                const key = `${row.estudiante}|${row.programa}`;
+                if (!validationByEstAndProg[key]) {
+                    validationByEstAndProg[key] = {
+                        estudiante: row.estudiante,
+                        programa: row.programa,
+                        totalVenta: 0,
+                        recaudoR: 0,
+                        count: 0
+                    };
+                }
+                validationByEstAndProg[key].totalVenta += row.totalVenta;
+                validationByEstAndProg[key].recaudoR += row.recaudoR;
+                validationByEstAndProg[key].count += 1;
+            });
+
+            document.querySelector('#tableValidacionVentas tbody').innerHTML = Object.values(validationByEstAndProg).map(row => {
+                const difference = row.totalVenta === 0 ? 0 : ((row.recaudoR - row.totalVenta) / row.totalVenta) * 100;
+                const status = getValidationStatus(row.totalVenta, row.recaudoR);
+                return `<tr>
+                    <td>${row.estudiante}</td>
+                    <td>${row.programa}</td>
+                    <td>${fmt(row.totalVenta)}</td>
+                    <td>${fmt(row.recaudoR)}</td>
+                    <td>${row.totalVenta === 0 ? '-' : (difference >= 0 ? '+' : '') + difference.toFixed(2)}%</td>
+                    <td><span style="background:${status.color};color:white;padding:4px 8px;border-radius:3px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;"><i class="fas fa-${status.icon === '✓' ? 'check-circle' : status.icon === '!' ? 'exclamation-triangle' : 'times-circle'}"></i>${status.label}</span></td>
+                </tr>`;
             }).join('');
 
             if (charts['chartEstProgramas']) charts['chartEstProgramas'].destroy();
