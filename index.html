@@ -179,6 +179,10 @@
                             <div class="searchable-select-dropdown" id="filterEstudianteDropdown"></div>
                         </div>
                     </div>
+                    <div class="filter-group">
+                        <label>Año Cierre de Venta</label>
+                        <select id="filterYearEst"></select>
+                    </div>
                     <div class="button-group" style="align-self: flex-end;">
                         <button class="btn btn-primary" onclick="refreshData()"><i class="fas fa-sync"></i> Refrescar</button>
                     </div>
@@ -417,6 +421,7 @@
 
             document.getElementById('filterYear').innerHTML = '<option value="">Todos</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
             document.getElementById('filterYearMkt').innerHTML = '<option value="">Todos</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
+            document.getElementById('filterYearEst').innerHTML = '<option value="">Todos</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
 
             // Populate searchable dropdown for programa (General)
             window.programasData = programas;
@@ -532,6 +537,11 @@
             document.getElementById('filterYearMkt').addEventListener('change', () => {
                 updateDynamicFilters('marketing');
                 renderMarketingSheet();
+            });
+
+            // Student sheet: Update when year filter changes
+            document.getElementById('filterYearEst').addEventListener('change', () => {
+                renderEstudianteSheet();
             });
         }
 
@@ -876,6 +886,7 @@
 
         function renderEstudianteSheet() {
             const student = document.getElementById('filterEstudianteInput').value;
+            const year = document.getElementById('filterYearEst').value;
 
             // Helper function to safely parse numbers
             const parseNumber = (val) => {
@@ -885,9 +896,18 @@
                 return isNaN(num) ? 0 : num;
             };
 
+            // Initialize byProgram at function level so it's available for chart
+            let byProgram = {};
+
             // If student selected, show specific student data
             if (student) {
-                const data = allData.filter(r => r.ESTUDIANTE === student && r.ESTADO !== 'Retirado');
+                let data = allData.filter(r => r.ESTUDIANTE === student && r.ESTADO !== 'Retirado');
+
+                // Apply year filter if selected
+                if (year) {
+                    data = data.filter(r => r['AÑO CIERRE DE VENTA'] === year);
+                }
+
                 const estado = data.some(r => r.ESTADO === 'Activo') ? 'ACTIVO' : 'INACTIVO';
                 const programas = new Set(data.map(r => r.PROGRAMA)).size;
 
@@ -908,7 +928,6 @@
                     <div class="kpi-card"><div class="label">Pendiente</div><div class="value" data-tooltip="${pendienteCompact.full}">${pendienteCompact.display}</div></div>
                 `;
 
-                const byProgram = {};
                 data.forEach(r => { byProgram[r.PROGRAMA] = (byProgram[r.PROGRAMA] || 0) + parseNumber(r['NETO EXPRESADO EN PESOS']); });
 
                 document.querySelector('#tablePagos tbody').innerHTML = Object.keys(byProgram).map(p => {
@@ -931,7 +950,7 @@
 
             // Helper function to get validation icon and status
             const getValidationStatus = (totalVenta, recaudoR) => {
-                if (totalVenta === 0) return { icon: '-', color: '#999', label: 'Sin datos' };
+                if (totalVenta === 0) return { icon: '✕', color: '#E74C3C', label: 'Inconsistencia' };
                 const difference = ((recaudoR - totalVenta) / totalVenta) * 100;
                 if (difference === 0) {
                     return { icon: '✓', color: '#27AE60', label: 'Válido' };
@@ -944,9 +963,14 @@
 
             // Tabla de validación de consistencia de ventas
             // Si hay estudiante seleccionado, mostrar solo sus datos; si no, mostrar todos
-            const validationData = student
+            let validationData = student
                 ? allData.filter(r => r.ESTUDIANTE === student && r.ESTADO !== 'Retirado')
                 : allData.filter(r => r.ESTADO !== 'Retirado');
+
+            // Apply year filter if selected
+            if (year) {
+                validationData = validationData.filter(r => r['AÑO CIERRE DE VENTA'] === year);
+            }
 
             const validationRows = validationData.map(r => {
                 const totalVenta = parseNumber(r['TOTAL VENTA *EXP COP*']);
