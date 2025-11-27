@@ -876,11 +876,6 @@
 
         function renderEstudianteSheet() {
             const student = document.getElementById('filterEstudianteInput').value;
-            if (!student) return;
-
-            const data = allData.filter(r => r.ESTUDIANTE === student && r.ESTADO !== 'Retirado');
-            const estado = data.some(r => r.ESTADO === 'Activo') ? 'ACTIVO' : 'INACTIVO';
-            const programas = new Set(data.map(r => r.PROGRAMA)).size;
 
             // Helper function to safely parse numbers
             const parseNumber = (val) => {
@@ -890,35 +885,49 @@
                 return isNaN(num) ? 0 : num;
             };
 
-            const vendido = data.reduce((s, r) => s + parseNumber(r['TOTAL VENTA *EXP COP*']), 0);
-            const recaudado = data.reduce((s, r) => s + parseNumber(r['NETO EXPRESADO EN PESOS']), 0);
-            const pendiente = data.reduce((s, r) => s + parseNumber(r['*A* PENDIENTE RECAUDO EXPRESADO EN PESOS']), 0);
+            // If student selected, show specific student data
+            if (student) {
+                const data = allData.filter(r => r.ESTUDIANTE === student && r.ESTADO !== 'Retirado');
+                const estado = data.some(r => r.ESTADO === 'Activo') ? 'ACTIVO' : 'INACTIVO';
+                const programas = new Set(data.map(r => r.PROGRAMA)).size;
 
-            document.getElementById('estNombre').textContent = student;
-            document.getElementById('estEstado').textContent = estado;
-            document.getElementById('estProgramas').textContent = programas;
-            const vendidoCompact = fmtCompact(vendido);
-            const recaudadoCompact = fmtCompact(recaudado);
-            const pendienteCompact = fmtCompact(pendiente);
+                const vendido = data.reduce((s, r) => s + parseNumber(r['TOTAL VENTA *EXP COP*']), 0);
+                const recaudado = data.reduce((s, r) => s + parseNumber(r['NETO EXPRESADO EN PESOS']), 0);
+                const pendiente = data.reduce((s, r) => s + parseNumber(r['*A* PENDIENTE RECAUDO EXPRESADO EN PESOS']), 0);
 
-            document.getElementById('kpiGridEst').innerHTML = `
-                <div class="kpi-card"><div class="label">Total Vendido</div><div class="value" data-tooltip="${vendidoCompact.full}">${vendidoCompact.display}</div></div>
-                <div class="kpi-card"><div class="label">Recaudado</div><div class="value" data-tooltip="${recaudadoCompact.full}">${recaudadoCompact.display}</div></div>
-                <div class="kpi-card"><div class="label">Pendiente</div><div class="value" data-tooltip="${pendienteCompact.full}">${pendienteCompact.display}</div></div>
-            `;
+                document.getElementById('estNombre').textContent = student;
+                document.getElementById('estEstado').textContent = estado;
+                document.getElementById('estProgramas').textContent = programas;
+                const vendidoCompact = fmtCompact(vendido);
+                const recaudadoCompact = fmtCompact(recaudado);
+                const pendienteCompact = fmtCompact(pendiente);
 
-            const byProgram = {};
-            data.forEach(r => { byProgram[r.PROGRAMA] = (byProgram[r.PROGRAMA] || 0) + parseNumber(r['NETO EXPRESADO EN PESOS']); });
+                document.getElementById('kpiGridEst').innerHTML = `
+                    <div class="kpi-card"><div class="label">Total Vendido</div><div class="value" data-tooltip="${vendidoCompact.full}">${vendidoCompact.display}</div></div>
+                    <div class="kpi-card"><div class="label">Recaudado</div><div class="value" data-tooltip="${recaudadoCompact.full}">${recaudadoCompact.display}</div></div>
+                    <div class="kpi-card"><div class="label">Pendiente</div><div class="value" data-tooltip="${pendienteCompact.full}">${pendienteCompact.display}</div></div>
+                `;
 
-            document.querySelector('#tablePagos tbody').innerHTML = Object.keys(byProgram).map(p => {
-                const d = data.filter(r => r.PROGRAMA === p);
-                const v = d.reduce((s, r) => s + parseNumber(r['TOTAL VENTA *EXP COP*']), 0);
-                const re = d.reduce((s, r) => s + parseNumber(r['NETO EXPRESADO EN PESOS']), 0);
-                const pe = d.reduce((s, r) => s + parseNumber(r['*A* PENDIENTE RECAUDO EXPRESADO EN PESOS']), 0);
-                const porcentajePagado = (re/v)*100;
-                const estaPagado = pe === 0;
-                return `<tr><td>${p}</td><td>${fmt(v)}</td><td>${fmt(re)}</td><td>${fmt(pe)}</td><td>${pct(porcentajePagado)}</td><td><span style="background:${estaPagado?'#27AE60':'#E74C3C'};color:white;padding:2px 6px;border-radius:3px;font-size:11px;">${estaPagado?'Pagado':'Pendiente'}</span></td></tr>`;
-            }).join('');
+                const byProgram = {};
+                data.forEach(r => { byProgram[r.PROGRAMA] = (byProgram[r.PROGRAMA] || 0) + parseNumber(r['NETO EXPRESADO EN PESOS']); });
+
+                document.querySelector('#tablePagos tbody').innerHTML = Object.keys(byProgram).map(p => {
+                    const d = data.filter(r => r.PROGRAMA === p);
+                    const v = d.reduce((s, r) => s + parseNumber(r['TOTAL VENTA *EXP COP*']), 0);
+                    const re = d.reduce((s, r) => s + parseNumber(r['NETO EXPRESADO EN PESOS']), 0);
+                    const pe = d.reduce((s, r) => s + parseNumber(r['*A* PENDIENTE RECAUDO EXPRESADO EN PESOS']), 0);
+                    const porcentajePagado = (re/v)*100;
+                    const estaPagado = pe === 0;
+                    return `<tr><td>${p}</td><td>${fmt(v)}</td><td>${fmt(re)}</td><td>${fmt(pe)}</td><td>${pct(porcentajePagado)}</td><td><span style="background:${estaPagado?'#27AE60':'#E74C3C'};color:white;padding:2px 6px;border-radius:3px;font-size:11px;">${estaPagado?'Pagado':'Pendiente'}</span></td></tr>`;
+                }).join('');
+            } else {
+                // No student selected: clear the specific student KPIs and history
+                document.getElementById('estNombre').textContent = '-';
+                document.getElementById('estEstado').textContent = '-';
+                document.getElementById('estProgramas').textContent = '-';
+                document.getElementById('kpiGridEst').innerHTML = '';
+                document.querySelector('#tablePagos tbody').innerHTML = '';
+            }
 
             // Helper function to get validation icon and status
             const getValidationStatus = (totalVenta, recaudoR) => {
@@ -934,7 +943,12 @@
             };
 
             // Tabla de validación de consistencia de ventas
-            const validationRows = data.map(r => {
+            // Si hay estudiante seleccionado, mostrar solo sus datos; si no, mostrar todos
+            const validationData = student
+                ? allData.filter(r => r.ESTUDIANTE === student && r.ESTADO !== 'Retirado')
+                : allData.filter(r => r.ESTADO !== 'Retirado');
+
+            const validationRows = validationData.map(r => {
                 const totalVenta = parseNumber(r['TOTAL VENTA *EXP COP*']);
                 const recaudoR = parseNumber(r['$R & PROY exp pesos']);
                 const difference = totalVenta === 0 ? 0 : ((recaudoR - totalVenta) / totalVenta) * 100;
