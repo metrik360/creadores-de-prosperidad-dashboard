@@ -408,9 +408,9 @@
         function populateFilterOptions() {
             const programas = [...new Set(allData.filter(r => r.PROGRAMA).map(r => r.PROGRAMA).sort())];
             const estudiantes = [...new Set(allData.filter(r => r.ESTUDIANTE).map(r => r.ESTUDIANTE).sort())];
-            // Filter campaigns: exclude empty, "No Disponible", "n/a", "Sin Datos", etc.
+            // Filter campaigns: exclude empty, "No Disponible", "n/a", etc. (Keep "Sin Datos" as valid campaign)
             const campanas = [...new Set(allData
-                .filter(r => r['CAMPAÑA( Juli)'] && r['CAMPAÑA( Juli)'].trim() && r['CAMPAÑA( Juli)'] !== 'No Disponible' && !r['CAMPAÑA( Juli)'].toLowerCase().includes('n/a') && r['CAMPAÑA( Juli)'] !== 'Sin Datos')
+                .filter(r => r['CAMPAÑA( Juli)'] && r['CAMPAÑA( Juli)'].trim() && r['CAMPAÑA( Juli)'] !== 'No Disponible' && !r['CAMPAÑA( Juli)'].toLowerCase().includes('n/a'))
                 .map(r => r['CAMPAÑA( Juli)'])
                 .sort())];
             // Filter years: exclude empty and sort descending
@@ -704,9 +704,9 @@
                     return true;
                 });
 
-                // Extract available campaigns from filtered data
+                // Extract available campaigns from filtered data (Keep "Sin Datos" as valid campaign)
                 const availableCampanas = [...new Set(availableData
-                    .filter(r => r['CAMPAÑA( Juli)'] && r['CAMPAÑA( Juli)'].trim() && r['CAMPAÑA( Juli)'] !== 'No Disponible' && !r['CAMPAÑA( Juli)'].toLowerCase().includes('n/a') && r['CAMPAÑA( Juli)'] !== 'Sin Datos')
+                    .filter(r => r['CAMPAÑA( Juli)'] && r['CAMPAÑA( Juli)'].trim() && r['CAMPAÑA( Juli)'] !== 'No Disponible' && !r['CAMPAÑA( Juli)'].toLowerCase().includes('n/a'))
                     .map(r => r['CAMPAÑA( Juli)'])
                     .sort())];
 
@@ -1064,7 +1064,8 @@
 
             let filtered = allData.filter(r => {
                 if (r.ESTADO === 'Retirado') return false;
-                if (!r['CAMPAÑA( Juli)'] || r['CAMPAÑA( Juli)'] === 'Sin Datos' || r['CAMPAÑA( Juli)'] === 'No Disponible' || r['CAMPAÑA( Juli)'].toLowerCase().includes('n/a')) return false;
+                // Allow "Sin Datos" as valid campaign; only exclude empty, "No Disponible", and "n/a"
+                if (!r['CAMPAÑA( Juli)'] || r['CAMPAÑA( Juli)'] === 'No Disponible' || r['CAMPAÑA( Juli)'].toLowerCase().includes('n/a')) return false;
                 if (campaign && r['CAMPAÑA( Juli)'] !== campaign) return false;
                 if (program && r.PROGRAMA !== program) return false;
                 if (year && r['AÑO CIERRE DE VENTA'] !== year) return false;
