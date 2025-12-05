@@ -1,0 +1,110 @@
+================================================================================
+                    GUÍA RÁPIDA - SUBIR A GITHUB
+================================================================================
+
+REQUISITOS:
+  ✓ Cuenta de GitHub (gratuita en github.com)
+  ✓ Git instalado en tu máquina
+  ✓ Terminal/Command Prompt
+
+================================================================================
+                         PASO A PASO
+================================================================================
+
+PASO 1: CREAR REPOSITORIO EN GITHUB
+────────────────────────────────────────────────────────────────────────────
+
+1. Ve a: https://github.com/new
+2. Rellena:
+   - Repository name: creadores-de-prosperidad-dashboard
+   - Description: Dashboard operacional para Creadores de Prosperidad
+   - Visibility: Public
+   - Initialize: (deja sin marcar)
+3. Click en "Create repository"
+4. GitHub te mostrará una URL como:
+   https://github.com/TU_USUARIO/creadores-de-prosperidad-dashboard.git
+
+PASO 2: CONECTAR REPOSITORIO LOCAL CON GITHUB
+────────────────────────────────────────────────────────────────────────────
+
+Abre terminal y ejecuta estos comandos (copia y pega):
+
+cd /Users/mauricio/projects/creadores_de_prosperidad
+
+git remote add origin https://github.com/TU_USUARIO/creadores-de-prosperidad-dashboard.git
+
+git branch -M main
+
+git push -u origin main
+
+⚠️ IMPORTANTE: Reemplaza TU_USUARIO con tu nombre de usuario de GitHub
+
+PASO 3: VERIFICAR LA SUBIDA
+────────────────────────────────────────────────────────────────────────────
+
+1. Ve a: https://github.com/TU_USUARIO/creadores-de-prosperidad-dashboard
+2. Deberías ver todos los archivos (index.html, server.js, README.md, etc.)
+
+PASO 4: CONFIGURAR DESPLIEGUE PÚBLICO (OPCIONAL)
+────────────────────────────────────────────────────────────────────────────
+
+Opción A - GitHub Pages (Más rápido):
+1. En GitHub, ve a Settings → Pages
+2. Source: selecciona "main" branch
+3. Click "Save"
+4. En 1-2 minutos estará en:
+   https://tu-usuario.github.io/creadores-de-prosperidad-dashboard/
+
+Opción B - Vercel (Mejor para backend):
+1. Ve a: https://vercel.com/import
+2. Conecta con GitHub
+3. Selecciona el repositorio
+4. Click "Import"
+5. En 2-3 minutos estará en:
+   https://creadores-de-prosperidad-dashboard.vercel.app
+
+================================================================================
+                    SOLUCIÓN DE PROBLEMAS
+================================================================================
+
+Problema: "fatal: not a git repository"
+Solución: Asegúrate de estar en la carpeta correcta:
+          cd /Users/mauricio/projects/creadores_de_prosperidad
+
+Problema: "authentication failed"
+Solución: GitHub pedirá tu usuario y contraseña (o token de acceso)
+          Usa tu contraseña o crea un token en Settings → Developer settings
+
+Problema: "The branch 'main' does not exist"
+Solución: Ejecuta: git branch -M main
+          Luego: git push -u origin main
+
+Problema: "fatal: remote origin already exists"
+Solución: Ejecuta: git remote remove origin
+          Luego agrega nuevamente: git remote add origin https://...
+
+================================================================================
+                    COMANDOS ÚTILES
+================================================================================
+
+Ver cambios sin confirmar:
+  git status
+
+Ver historial de commits:
+  git log --oneline
+
+Ver repositorio remoto:
+  git remote -v
+
+Hacer cambios después (Para futuros updates):
+  git add .
+  git commit -m "Descripción del cambio"
+  git push origin main
+
+================================================================================
+
+¡Cuando hayas completado estos pasos, el proyecto estará en GitHub!
+
+¿Dudas? Lee: GITHUB_DEPLOYMENT.md
+
+================================================================================

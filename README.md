@@ -1,167 +1,122 @@
-# MÉTRIK - Dashboard BI
-## Creadores de Prosperidad
+# 📊 MÉTRIK Dashboard - Creadores de Prosperidad
 
-Sistema de inteligencia de negocios para monitorear métricas críticas de ventas, recaudos y campañas de marketing.
+Dashboard operacional interactivo para análisis de datos de Creadores de Prosperidad.
 
-### 📊 Características
+## 🎯 Características
 
-- **3 Dashboards Especializados:**
-  - **General**: Visión ejecutiva de KPIs clave
-  - **Estudiante**: Análisis individual de estudiantes y su cartera
-  - **Marketing**: Efectividad y ROI de campañas
+### Hojas disponibles
 
-- **5 Métricas Generales:**
-  - Ventas Totales
-  - Total Recaudado
-  - Cartera Pendiente
-  - Número de Programas Vendidos
-  - Total de Estudiantes Atendidos
+- **General**: Vista general con KPIs, filtros por fecha, programa y año
+- **Estudiante**: Análisis detallado por estudiante con tabla de pagos y gráficos
+- **Marketing**: Análisis de campañas con efectividad y filtros avanzados
 
-- **5 Métricas por Estudiante:**
-  - Total Vendido
-  - Pendiente por Recaudo
-  - Total Recaudado
-  - Estado
-  - Número de Programas Matriculados
+### Funcionalidades
 
-- **5 Métricas de Marketing:**
-  - Ventas totales por Campañas
-  - Total Recaudo por Campañas
-  - Ratio de Efectividad
-  - Total Campañas Realizadas
-  - Número de Estudiantes Por Campañas
+✅ **Filtros Avanzados**
+- Rango de fechas con accesos rápidos (Este Mes, Mes Anterior, Este Año, Todo)
+- Búsqueda en tiempo real para Programa, Estudiante y Campaña
+- Filtro por Año de Cierre de Venta
 
-- **Gráficas Interactivas:**
-  - Ventas Totales por Programa (General)
-  - Recaudo/Ingreso por Programa (Estudiante)
-  - Ventas Totales por Campaña (Marketing)
+✅ **KPIs Dinámicos**
+- Números compactos (1.1M, 4.7K) con tooltips de valores completos
+- Cálculos en tiempo real basados en filtros
 
-- **Filtros Globales:**
-  - Fecha de Recaudo (rango)
-  - Exclusión de Estado (ej: Retirado)
+✅ **Visualizaciones**
+- Gráficos interactivos con Chart.js
+- Gráficos expandibles (Top 10 + OTROS)
+- Tablas con datos filtrados
 
-### 🛠️ Instalación
+✅ **Diseño Responsive**
+- Interfaz moderna y limpia
+- Adaptable a diferentes tamaños de pantalla
+- Temas con variables CSS
 
-Las dependencias ya han sido instaladas. Para reinstalar:
+## 🚀 Inicio Rápido
 
+### Requisitos
+- Node.js (para ejecutar el servidor proxy)
+- Navegador moderno
+
+### Instalación
+
+1. Clonar el repositorio
+```bash
+git clone https://github.com/tu-usuario/creadores-de-prosperidad-dashboard.git
+cd creadores-de-prosperidad-dashboard
+```
+
+2. Instalar dependencias
 ```bash
 npm install
-cd frontend && npm install
 ```
 
-### 🚀 Ejecución
-
-#### Opción 1: Backend + Frontend (desarrollo)
-
+3. Ejecutar el servidor
 ```bash
-# En una terminal - Backend
-npm run dev
-
-# En otra terminal - Frontend
-npm run client
+node server.js
 ```
 
-#### Opción 2: Producción (build + servidor)
-
-```bash
-npm run build
-npm start
+4. Abrir en el navegador
+```
+http://localhost:3000
 ```
 
-El servidor estará disponible en `http://localhost:5000`
-
-### 📊 Cargar datos desde Google Sheets
-
-Para actualizar los datos de Google Sheets:
-
-```bash
-npm run etl
-```
-
-### 🗄️ Base de Datos
-
-La base de datos SQLite se encuentra en `db.sqlite` con las siguientes tablas:
-
-- **students**: Información de estudiantes
-- **programs**: Catálogo de programas
-- **campaigns**: Campañas de marketing
-- **sales**: Transacciones de venta
-- **cart**: Información de cartera pendiente
-
-### 📁 Estructura del Proyecto
+## 📁 Estructura del Proyecto
 
 ```
-metrik-creadores-prosperidad/
-├── backend/
-│   ├── db.js              # Configuración de BD
-│   ├── server.js          # Servidor Express
-│   ├── routes/
-│   │   └── metrics.js     # Endpoints de métricas
-│   └── etl/
-│       └── data-pipeline.js
-├── frontend/
-│   ├── public/
-│   ├── src/
-│   │   ├── components/    # Componentes React
-│   │   ├── pages/         # Páginas (General, Estudiante, Marketing)
-│   │   ├── services/      # Cliente API
-│   │   └── App.jsx
-│   └── package.json
-├── db.sqlite              # Base de datos
-└── README.md
+├── index.html           # Aplicación principal (HTML + CSS + JS)
+├── server.js            # Servidor Node.js (proxy CORS)
+├── package.json         # Dependencias
+├── README.md            # Este archivo
+└── .gitignore           # Archivos a ignorar en git
 ```
 
-### 🔗 Endpoints API
+## 🔧 Tecnologías Utilizadas
 
-**Métricas Generales:**
-- `GET /api/metrics/general`
+- **Frontend**: HTML5, CSS3, JavaScript vanilla
+- **Gráficos**: Chart.js 3.9.1
+- **Análisis de CSV**: PapaParse 5.4.1
+- **Iconos**: Font Awesome 6.4.0
+- **Backend**: Node.js + Express (proxy CORS)
+- **Fuente**: Google Fonts (Inter, Poppins)
 
-**Métricas por Estudiante:**
-- `GET /api/metrics/student/:studentName`
-- `GET /api/metrics/students` (listado)
+## 📊 Fuente de Datos
 
-**Métricas por Programa:**
-- `GET /api/metrics/programs`
+Los datos se cargan desde Google Sheets mediante una API proxy que maneja CORS.
 
-**Métricas por Campaña:**
-- `GET /api/metrics/campaigns`
+## 🎨 Paleta de Colores
 
-**Metadata:**
-- `GET /api/metrics/date-range`
+- **Primario**: #301063 (Púrpura oscuro)
+- **Secundario**: #C0BECB (Púrpura claro)
+- **Texto**: #36454F (Gris oscuro)
+- **Éxito**: #27AE60 (Verde)
+- **Error**: #E74C3C (Rojo)
 
-### 🔍 Filtros (Query Parameters)
+## 📝 Cambios Recientes
 
-Todos los endpoints de métricas soportan:
-- `startDate`: Fecha inicio (YYYY-MM-DD)
-- `endDate`: Fecha fin (YYYY-MM-DD)
-- `excludeStatus`: Estado a excluir (ej: "Retirado")
+### Sprint 1 (25 Nov 2025)
+- ✅ Implementación de filtros completos
+- ✅ Conversión de filtros a searchable dropdowns
+- ✅ Fix de KPIs en hoja Estudiante
+- ✅ Implementación de efectividad en Marketing
+- ✅ Números compactos con tooltips
+- ✅ Logo y ajustes visuales
 
-Ejemplo:
-```
-GET /api/metrics/general?startDate=2024-10-01&endDate=2025-03-31&excludeStatus=Retirado
-```
+## 🐛 Solución de Problemas
 
-### 📋 Notas
+### Los datos no cargan
+- Verifica que el servidor está ejecutándose (`node server.js`)
+- Revisa la conexión a Google Sheets
+- Abre la consola del navegador (F12) para ver errores
 
-- Los datos se cargan desde: [Google Sheets](https://docs.google.com/spreadsheets/d/1xPx1KNRJg0n6pYmKUn7cwD0kEs999xso3cLlwxZe1sg)
-- Se excluyen automáticamente registros con estado "Retirado"
-- Período de datos: Octubre 2024 - Marzo 2025 (1,186 registros)
-- Moneda: COP (Pesos Colombianos)
+### Los gráficos no se muestran
+- Asegúrate de que Chart.js se cargó correctamente
+- Verifica que los datos filtrados no están vacíos
 
-### 🔧 Desarrollo
+## 📧 Contacto
 
-El proyecto usa:
-- **Backend**: Node.js, Express, SQLite3
-- **Frontend**: React, Chart.js, React Router
-- **Styling**: CSS3 con variables CSS
+Para preguntas o mejoras, contacta al equipo de desarrollo de MÉTRIK.
 
-Para desarrollo local con hot-reload:
+---
 
-```bash
-npm run dev        # Backend con nodemon
-npm run client     # Frontend con react-scripts
-```
-
-### 📞 Soporte
-
-Para issues o mejoras, contacta al equipo de desarrollo.
+**Estado**: ✅ Listo para Producción
+**Última actualización**: 25 de Noviembre, 2025

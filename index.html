@@ -1,1 +1,1270 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="theme-color" content="#000000"/><meta name="description" content="MÉTRIK - BI Dashboard for Creadores de Prosperidad"/><title>MÉTRIK - Dashboard</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,'Fira Sans','Droid Sans','Helvetica Neue',sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;background-color:#f5f5f5}code{font-family:source-code-pro,Menlo,Monaco,Consolas,'Courier New',monospace}</style><script defer="defer" src="/creadores-de-prosperidad-dashboard/static/js/main.aa27ae8c.js"></script><link href="/creadores-de-prosperidad-dashboard/static/css/main.390c4f21.css" rel="stylesheet"></head><body><noscript>Necesitas habilitar JavaScript para ejecutar esta app.</noscript><div id="root"></div></body></html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MÉTRIK Dashboard - Creadores de Prosperidad</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --color-primary: #301063;
+            --color-secondary: #C0BECB;
+            --color-text: #36454F;
+            --color-bg: #FFFFFF;
+            --color-bg-light: #F9F9F9;
+            --color-border: #E0E0E0;
+            --color-success: #27AE60;
+            --color-error: #E74C3C;
+        }
+        body { font-family: 'Inter', sans-serif; color: var(--color-text); background-color: var(--color-secondary); line-height: 1.6; }
+        h2 { font-size: 32px; font-weight: 700; letter-spacing: -0.5px; }
+        .dashboard { min-height: 100vh; display: flex; flex-direction: column; }
+        .dashboard-header { background-color: var(--color-primary); color: white; padding: 20px 30px; display: flex; align-items: center; gap: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .dashboard-header h1 { font-family: 'Poppins', sans-serif; font-size: 24px; font-weight: 600; }
+        .sheet-tabs { background-color: var(--color-bg); border-bottom: 2px solid var(--color-border); display: flex; gap: 0; }
+        .sheet-tabs button { flex: 1; padding: 15px 20px; border: none; background: transparent; cursor: pointer; transition: all 200ms; }
+        .sheet-tabs button:hover { background-color: var(--color-bg-light); }
+        .sheet-tabs button.active { color: var(--color-primary); border-bottom: 3px solid var(--color-primary); font-weight: 600; }
+        .sheet-content { flex: 1; padding: 30px; background-color: var(--color-secondary); overflow-y: auto; }
+        .sheet { display: none; }
+        .sheet.active { display: block; animation: fadeIn 300ms ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .filters { background-color: var(--color-bg); padding: 20px; border-radius: 8px; margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-group label { font-weight: 500; font-size: 12px; text-transform: uppercase; color: var(--color-text); }
+        .filter-group select, .filter-group input { padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 4px; font-family: 'Inter', sans-serif; }
+        .filter-group select:focus, .filter-group input:focus { outline: none; border-color: var(--color-primary); }
+        .searchable-select-wrapper { position: relative; }
+        .searchable-select-input { width: 100%; padding: 8px 12px; border: 1px solid var(--color-border); border-radius: 4px; font-family: 'Inter', sans-serif; }
+        .searchable-select-input:focus { outline: none; border-color: var(--color-primary); }
+        .searchable-select-dropdown { position: absolute; top: 100%; left: 0; right: 0; max-height: 250px; overflow-y: auto; background: white; border: 1px solid var(--color-border); border-top: none; border-radius: 0 0 4px 4px; z-index: 100; display: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .searchable-select-dropdown.active { display: block; }
+        .searchable-select-option { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid var(--color-border); }
+        .searchable-select-option:last-child { border-bottom: none; }
+        .searchable-select-option:hover { background-color: var(--color-bg-light); }
+        .searchable-select-option.selected { background-color: var(--color-primary); color: white; }
+        .searchable-select-option.no-results { padding: 15px 12px; text-align: center; color: #999; }
+        .searchable-select-clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #999; font-size: 16px; }
+        .searchable-select-clear:hover { color: var(--color-primary); }
+        .button-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        button.btn { padding: 10px 20px; border: none; border-radius: 6px; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+        button.btn-primary { background-color: var(--color-primary); color: white; }
+        button.btn-primary:hover { background-color: #1A0A3A; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .kpi-card { background-color: var(--color-bg); border: 1px solid var(--color-border); border-radius: 8px; padding: 20px; transition: all 200ms; }
+        .kpi-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.12); transform: translateY(-4px); }
+        .kpi-card .label { font-size: 12px; font-weight: 600; text-transform: uppercase; color: #999; margin-bottom: 10px; }
+        .kpi-card .value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--color-primary);
+            margin-bottom: 8px;
+            position: relative;
+            cursor: help;
+            border-bottom: 1px dashed var(--color-primary);
+            display: inline-block;
+            padding-bottom: 2px;
+        }
+        .kpi-card .value:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--color-primary);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .kpi-card .change { font-size: 13px; font-weight: 500; }
+        .kpi-card .change.positive { color: var(--color-success); }
+        .kpi-card .change.negative { color: var(--color-error); }
+        .charts-section { background-color: var(--color-bg); padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .chart-container { position: relative; height: 400px; margin-bottom: 30px; }
+        .chart-container h3 { font-family: 'Poppins', sans-serif; font-size: 18px; font-weight: 600; margin-bottom: 15px; color: var(--color-primary); }
+        .table-container { background-color: var(--color-bg); border-radius: 8px; overflow: hidden; }
+        .table-header { background-color: var(--color-secondary); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .table-header h3 { font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 600; }
+        table { width: 100%; border-collapse: collapse; }
+        table thead { background-color: var(--color-secondary); }
+        table thead th { padding: 12px 15px; text-align: left; font-weight: 600; font-size: 13px; text-transform: uppercase; }
+        table tbody tr { border-bottom: 1px solid var(--color-border); }
+        table tbody tr:hover { background-color: var(--color-bg-light); }
+        table tbody td { padding: 12px 15px; font-size: 14px; }
+        .dashboard-footer { background-color: var(--color-bg); border-top: 1px solid var(--color-border); padding: 15px 30px; text-align: center; font-size: 12px; color: #999; }
+        @media (max-width: 640px) {
+            .kpi-grid { grid-template-columns: 1fr; }
+            .filters { grid-template-columns: 1fr; }
+            .chart-container { height: 250px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <header class="dashboard-header">
+            <img src="https://i.ibb.co/nMksxP76/Creadores-de-Prosperidad-logo.png" alt="Logo" style="height: 50px; width: 50px; border-radius: 8px; object-fit: contain;">
+            <h1>CREADORES DE PROSPERIDAD</h1>
+            <span style="flex: 1;"></span>
+            <span style="font-size: 12px; opacity: 0.8;">Dashboard Operacional</span>
+        </header>
+
+        <nav class="sheet-tabs">
+            <button class="tab active" data-sheet="general"><i class="fas fa-chart-line"></i> General</button>
+            <button class="tab" data-sheet="estudiante"><i class="fas fa-user"></i> Estudiante</button>
+            <button class="tab" data-sheet="marketing"><i class="fas fa-bullhorn"></i> Marketing</button>
+        </nav>
+
+        <div class="sheet-content">
+            <div id="general" class="sheet active">
+                <h2 style="color: var(--color-primary); margin-bottom: 20px;">Vista General</h2>
+                <div class="filters">
+                    <div class="filter-group">
+                        <label>Fecha Inicio</label>
+                        <input type="date" id="filterDateFrom" />
+                    </div>
+                    <div class="filter-group">
+                        <label>Fecha Fin</label>
+                        <input type="date" id="filterDateTo" />
+                    </div>
+                    <div class="filter-group">
+                        <label>Accesos Rápidos</label>
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            <button class="btn btn-primary" onclick="setDateRange('thisMonth')" style="padding: 6px 10px; font-size: 12px;">Este Mes</button>
+                            <button class="btn btn-primary" onclick="setDateRange('lastMonth')" style="padding: 6px 10px; font-size: 12px;">Mes Anterior</button>
+                            <button class="btn btn-primary" onclick="setDateRange('thisYear')" style="padding: 6px 10px; font-size: 12px;">Este Año</button>
+                            <button class="btn btn-primary" onclick="setDateRange('allTime')" style="padding: 6px 10px; font-size: 12px;">Todo</button>
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label>Programa</label>
+                        <div class="searchable-select-wrapper">
+                            <input type="text" class="searchable-select-input" id="filterProgramInput" placeholder="Buscar programa...">
+                            <span class="searchable-select-clear" id="filterProgramClear" style="display:none;">✕</span>
+                            <div class="searchable-select-dropdown" id="filterProgramDropdown"></div>
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label>Año Cierre</label>
+                        <select id="filterYear"><option value="">Todos</option></select>
+                    </div>
+                    <div class="button-group" style="align-self: flex-end;">
+                        <button class="btn btn-primary" onclick="refreshData()"><i class="fas fa-sync"></i> Refrescar</button>
+                        <button class="btn btn-primary" onclick="exportData('csv')"><i class="fas fa-download"></i> Descargar</button>
+                    </div>
+                </div>
+                <div class="kpi-grid" id="kpiGrid"></div>
+                <div class="charts-section">
+                    <div class="chart-container"><h3>Ventas por Programa</h3><canvas id="chartVentasProgramas"></canvas></div>
+                </div>
+            </div>
+
+            <div id="estudiante" class="sheet">
+                <h2 style="color: var(--color-primary); margin-bottom: 20px;">Detalle de Estudiante</h2>
+                <div class="filters">
+                    <div class="filter-group">
+                        <label>Estudiante</label>
+                        <div class="searchable-select-wrapper">
+                            <input type="text" class="searchable-select-input" id="filterEstudianteInput" placeholder="Buscar estudiante...">
+                            <span class="searchable-select-clear" id="filterEstudianteClear" style="display:none;">✕</span>
+                            <div class="searchable-select-dropdown" id="filterEstudianteDropdown"></div>
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label>Año Cierre de Venta</label>
+                        <select id="filterYearEst"></select>
+                    </div>
+                    <div class="button-group" style="align-self: flex-end;">
+                        <button class="btn btn-primary" onclick="refreshData()"><i class="fas fa-sync"></i> Refrescar</button>
+                    </div>
+                </div>
+                <div style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                        <div><div style="font-size: 12px; color: #999; font-weight: 600;">Estudiante</div><div style="font-size: 16px; font-weight: 600; margin-top: 5px;" id="estNombre">-</div></div>
+                        <div><div style="font-size: 12px; color: #999; font-weight: 600;">Estado</div><div style="font-size: 16px; font-weight: 600; margin-top: 5px;" id="estEstado">-</div></div>
+                        <div><div style="font-size: 12px; color: #999; font-weight: 600;">Programas</div><div style="font-size: 16px; font-weight: 600; margin-top: 5px;" id="estProgramas">-</div></div>
+                    </div>
+                </div>
+                <div class="kpi-grid" id="kpiGridEst"></div>
+                <div class="charts-section"><div class="chart-container"><h3>Desglose por Programa</h3><canvas id="chartEstProgramas"></canvas></div></div>
+                <div class="table-container" style="margin-top: 20px;">
+                    <div class="table-header"><h3>Historial de Pagos</h3></div>
+                    <table id="tablePagos"><thead><tr><th>Programa</th><th>Venta Total</th><th>Pagado</th><th>Pendiente</th><th>% Pagado</th><th>Estado</th></tr></thead><tbody></tbody></table>
+                </div>
+                <div class="table-container" style="margin-top: 20px;">
+                    <div class="table-header"><h3>Validación de Consistencia de Ventas</h3></div>
+                    <table id="tableValidacionVentas"><thead><tr><th>Estudiante</th><th>Programa</th><th>TOTAL VENTA *EXP COP*</th><th>$R & PROY exp pesos</th><th>Diferencia (%)</th><th>Estado</th></tr></thead><tbody></tbody></table>
+                </div>
+            </div>
+
+            <div id="marketing" class="sheet">
+                <h2 style="color: var(--color-primary); margin-bottom: 20px;">Análisis de Campañas</h2>
+                <div class="filters">
+                    <div class="filter-group">
+                        <label>Fecha Inicio</label>
+                        <input type="date" id="filterDateFromMkt" />
+                    </div>
+                    <div class="filter-group">
+                        <label>Fecha Fin</label>
+                        <input type="date" id="filterDateToMkt" />
+                    </div>
+                    <div class="filter-group">
+                        <label>Accesos Rápidos</label>
+                        <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                            <button class="btn btn-primary" onclick="setDateRangeMkt('thisMonth')" style="padding: 6px 10px; font-size: 12px;">Este Mes</button>
+                            <button class="btn btn-primary" onclick="setDateRangeMkt('lastMonth')" style="padding: 6px 10px; font-size: 12px;">Mes Anterior</button>
+                            <button class="btn btn-primary" onclick="setDateRangeMkt('thisYear')" style="padding: 6px 10px; font-size: 12px;">Este Año</button>
+                            <button class="btn btn-primary" onclick="setDateRangeMkt('allTime')" style="padding: 6px 10px; font-size: 12px;">Todo</button>
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label>Programa</label>
+                        <div class="searchable-select-wrapper">
+                            <input type="text" class="searchable-select-input" id="filterProgramMktInput" placeholder="Buscar programa...">
+                            <span class="searchable-select-clear" id="filterProgramMktClear" style="display:none;">✕</span>
+                            <div class="searchable-select-dropdown" id="filterProgramMktDropdown"></div>
+                        </div>
+                    </div>
+                    <div class="filter-group">
+                        <label>Año Cierre</label>
+                        <select id="filterYearMkt"><option value="">Todos</option></select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Campaña</label>
+                        <div class="searchable-select-wrapper">
+                            <input type="text" class="searchable-select-input" id="filterCampaignInput" placeholder="Buscar campaña...">
+                            <span class="searchable-select-clear" id="filterCampaignClear" style="display:none;">✕</span>
+                            <div class="searchable-select-dropdown" id="filterCampaignDropdown"></div>
+                        </div>
+                    </div>
+                    <div class="button-group" style="align-self: flex-end;">
+                        <button class="btn btn-primary" onclick="refreshData()"><i class="fas fa-sync"></i> Refrescar</button>
+                        <button class="btn btn-primary" onclick="exportData('csv')"><i class="fas fa-download"></i> Descargar</button>
+                    </div>
+                </div>
+                <div class="kpi-grid" id="kpiGridMkt"></div>
+                <div class="charts-section">
+                    <div class="chart-container"><h3>Ventas por Campaña</h3><canvas id="chartVentasCampanas"></canvas></div>
+                    <div class="chart-container"><h3>Efectividad de Campañas</h3><canvas id="chartEfectividad"></canvas></div>
+                </div>
+                <div class="table-container" style="margin-top: 20px;">
+                    <div class="table-header"><h3>Detalle de Campañas</h3></div>
+                    <table id="tableCampanas"><thead><tr><th>Campaña</th><th>Estudiantes</th><th>Ventas Totales</th><th>Recaudado</th><th>% Efectividad</th></tr></thead><tbody></tbody></table>
+                </div>
+            </div>
+        </div>
+
+        <footer class="dashboard-footer">
+            Última actualización: <span id="lastUpdate">-</span>
+        </footer>
+    </div>
+
+    <script>
+        // Detectar si estamos en servidor local o en archivo
+        const isLocalServer = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const SHEET_URL = isLocalServer ? '/csv' : 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQWN6hZhglRb3xq_EtW5WkutefYhmJ6b8jb1hNyV1L4q5p2iuyYWUBSkSze1vXpVUQyoNkOk4S8MFi0/pub?gid=739894217&single=true&output=csv';
+        const CACHE_TIME = 5 * 60 * 1000;
+        let allData = [];
+        let lastCacheTime = 0;
+        let charts = {};
+
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #E74C3C; color: white; padding: 15px 20px; border-radius: 4px; z-index: 9999; max-width: 300px;';
+            errorDiv.textContent = message;
+            document.body.appendChild(errorDiv);
+            setTimeout(() => errorDiv.remove(), 5000);
+        }
+
+        // Simple CSV parser fallback if PapaParse fails
+        function parseCSV(csv) {
+            const lines = csv.trim().split('\n');
+            if (lines.length === 0) return { data: [] };
+
+            const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+            const data = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                if (lines[i].trim() === '') continue;
+
+                const values = [];
+                let current = '';
+                let inQuotes = false;
+
+                for (let j = 0; j < lines[i].length; j++) {
+                    const char = lines[i][j];
+                    const nextChar = lines[i][j + 1];
+
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        values.push(current.trim().replace(/"/g, ''));
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                values.push(current.trim().replace(/"/g, ''));
+
+                const row = {};
+                headers.forEach((header, idx) => {
+                    row[header] = values[idx] || '';
+                });
+                data.push(row);
+            }
+
+            return { data };
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            setupTabs();
+            setupFilters();
+
+            // Wait for Chart.js to load (required)
+            let attempts = 0;
+            while (typeof Chart === 'undefined' && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+
+            if (typeof Chart === 'undefined') {
+                console.error('❌ Chart.js failed to load');
+                showError('Error: No se pudo cargar Chart.js. Intenta refrescar la página.');
+                return;
+            }
+
+            // If PapaParse loaded, great! If not, we'll use our fallback parser
+            if (typeof Papa === 'undefined') {
+                console.warn('⚠️ PapaParse not loaded, using fallback CSV parser');
+                window.Papa = { parse: parseCSV };
+            }
+
+            await loadData();
+            renderAllSheets();
+        });
+
+        function setupTabs() {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.querySelectorAll('.sheet').forEach(s => s.classList.remove('active'));
+                    document.getElementById(tab.dataset.sheet).classList.add('active');
+                });
+            });
+        }
+
+        async function loadData() {
+            const now = Date.now();
+            if (allData.length > 0 && (now - lastCacheTime) < CACHE_TIME) return;
+
+            console.log(`📡 Cargando datos${isLocalServer ? ' (server local)' : ' (Google Sheets)'}...`);
+
+            try {
+                const response = await fetch(SHEET_URL);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const csv = await response.text();
+
+                // Verificar que realmente hay datos CSV
+                if (!csv || csv.length < 50) {
+                    throw new Error('Respuesta CSV vacía o incompleta');
+                }
+
+                allData = Papa.parse(csv, { header: true, skipEmptyLines: true }).data;
+
+                if (!allData || allData.length === 0) {
+                    throw new Error('No se encontraron filas de datos después de parsear el CSV');
+                }
+
+                lastCacheTime = now;
+                updateLastUpdateTime();
+                populateFilterOptions();
+                console.log(`✅ Datos cargados exitosamente: ${allData.length} filas`);
+                renderAllSheets();
+            } catch (error) {
+                console.error('❌ Error al cargar datos:', error.message);
+                showError(`Error al cargar datos: ${error.message}. Por favor, intenta refrescar la página.`);
+            }
+        }
+
+        function updateLastUpdateTime() {
+            const now = new Date();
+            document.getElementById('lastUpdate').textContent = now.toLocaleString('es-CO');
+        }
+
+        function populateFilterOptions() {
+            const programas = [...new Set(allData.filter(r => r.PROGRAMA).map(r => r.PROGRAMA).sort())];
+            const estudiantes = [...new Set(allData.filter(r => r.ESTUDIANTE).map(r => r.ESTUDIANTE).sort())];
+            // Filter campaigns: exclude empty, "No Disponible", "n/a", etc. (Keep "Sin Datos" as valid campaign)
+            const campanas = [...new Set(allData
+                .filter(r => r['CAMPAÑA( Juli)'] && r['CAMPAÑA( Juli)'].trim() && r['CAMPAÑA( Juli)'] !== 'No Disponible' && !r['CAMPAÑA( Juli)'].toLowerCase().includes('n/a'))
+                .map(r => r['CAMPAÑA( Juli)'])
+                .sort())];
+            // Filter years: exclude empty and sort descending
+            const years = [...new Set(allData
+                .filter(r => r['AÑO CIERRE DE VENTA'] && r['AÑO CIERRE DE VENTA'].trim())
+                .map(r => r['AÑO CIERRE DE VENTA'].trim())
+                .sort((a, b) => b.localeCompare(a, undefined, { numeric: true })))];
+
+            document.getElementById('filterYear').innerHTML = '<option value="">Todos</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
+            document.getElementById('filterYearMkt').innerHTML = '<option value="">Todos</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
+            document.getElementById('filterYearEst').innerHTML = '<option value="">Todos</option>' + years.map(y => `<option value="${y}">${y}</option>`).join('');
+
+            // Populate searchable dropdown for programa (General)
+            window.programasData = programas;
+            initializeSearchableSelect('filterProgram', programas, (selected) => {
+                updateDynamicFilters('general');
+                renderAllSheets();
+            });
+
+            // Populate searchable dropdown for programa (Marketing)
+            window.programasMktData = programas;
+            initializeSearchableSelect('filterProgramMkt', programas, (selected) => {
+                updateDynamicFilters('marketing');
+                renderMarketingSheet();
+            });
+
+            // Populate searchable dropdown for estudiantes
+            window.estudiantesData = estudiantes;
+            initializeSearchableSelect('filterEstudiante', estudiantes, (selected) => {
+                renderEstudianteSheet();
+            });
+
+            // Populate searchable dropdown for campanas
+            window.campanasData = campanas;
+            initializeSearchableSelect('filterCampaign', campanas, (selected) => {
+                updateDynamicFilters('marketing');
+                renderMarketingSheet();
+            });
+
+            // Store all data for dynamic filtering
+            window.allProgramas = programas;
+            window.allCampanas = campanas;
+            window.allYears = years;
+        }
+
+        function setDateRange(range) {
+            const today = new Date();
+            let fromDate, toDate;
+
+            if (range === 'thisMonth') {
+                fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                toDate = today;
+            } else if (range === 'lastMonth') {
+                fromDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                toDate = new Date(today.getFullYear(), today.getMonth(), 0);
+            } else if (range === 'thisYear') {
+                fromDate = new Date(today.getFullYear(), 0, 1);
+                toDate = today;
+            } else if (range === 'allTime') {
+                fromDate = new Date(1900, 0, 1);
+                toDate = new Date(2099, 11, 31);
+            }
+
+            document.getElementById('filterDateFrom').value = fromDate.toISOString().split('T')[0];
+            document.getElementById('filterDateTo').value = toDate.toISOString().split('T')[0];
+            renderAllSheets();
+        }
+
+        function setDateRangeMkt(range) {
+            const today = new Date();
+            let fromDate, toDate;
+
+            if (range === 'thisMonth') {
+                fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+                toDate = today;
+            } else if (range === 'lastMonth') {
+                fromDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                toDate = new Date(today.getFullYear(), today.getMonth(), 0);
+            } else if (range === 'thisYear') {
+                fromDate = new Date(today.getFullYear(), 0, 1);
+                toDate = today;
+            } else if (range === 'allTime') {
+                fromDate = new Date(1900, 0, 1);
+                toDate = new Date(2099, 11, 31);
+            }
+
+            document.getElementById('filterDateFromMkt').value = fromDate.toISOString().split('T')[0];
+            document.getElementById('filterDateToMkt').value = toDate.toISOString().split('T')[0];
+            renderMarketingSheet();
+        }
+
+        function setupFilters() {
+            const today = new Date();
+            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+            document.getElementById('filterDateFrom').value = firstDayOfMonth.toISOString().split('T')[0];
+            document.getElementById('filterDateTo').value = today.toISOString().split('T')[0];
+            document.getElementById('filterDateFromMkt').value = firstDayOfMonth.toISOString().split('T')[0];
+            document.getElementById('filterDateToMkt').value = today.toISOString().split('T')[0];
+
+            // General sheet: Update dynamic filters when date or year changes
+            document.getElementById('filterDateFrom').addEventListener('change', () => {
+                updateDynamicFilters('general');
+                renderAllSheets();
+            });
+            document.getElementById('filterDateTo').addEventListener('change', () => {
+                updateDynamicFilters('general');
+                renderAllSheets();
+            });
+            document.getElementById('filterYear').addEventListener('change', () => {
+                updateDynamicFilters('general');
+                renderAllSheets();
+            });
+
+            // Marketing sheet: Update dynamic filters when date or year changes
+            document.getElementById('filterDateFromMkt').addEventListener('change', () => {
+                updateDynamicFilters('marketing');
+                renderMarketingSheet();
+            });
+            document.getElementById('filterDateToMkt').addEventListener('change', () => {
+                updateDynamicFilters('marketing');
+                renderMarketingSheet();
+            });
+            document.getElementById('filterYearMkt').addEventListener('change', () => {
+                updateDynamicFilters('marketing');
+                renderMarketingSheet();
+            });
+
+            // Student sheet: Update when year filter changes
+            document.getElementById('filterYearEst').addEventListener('change', () => {
+                renderEstudianteSheet();
+            });
+        }
+
+        function fmt(v) { return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(parseFloat(v) || 0); }
+        function pct(v) { return (parseFloat(v) || 0).toFixed(1) + '%'; }
+
+        // Format large numbers with suffixes for display, keeping full value for tooltip
+        function fmtCompact(v) {
+            const num = parseFloat(v) || 0;
+            const fullValue = fmt(num);
+
+            if (Math.abs(num) >= 1e9) {
+                const formatted = (num / 1e9).toFixed(1) + 'B';
+                return { display: formatted, full: fullValue };
+            } else if (Math.abs(num) >= 1e6) {
+                const formatted = (num / 1e6).toFixed(1) + 'M';
+                return { display: formatted, full: fullValue };
+            } else if (Math.abs(num) >= 1e3) {
+                const formatted = (num / 1e3).toFixed(1) + 'K';
+                return { display: formatted, full: fullValue };
+            }
+            return { display: fullValue, full: fullValue };
+        }
+
+        function initializeSearchableSelect(baseName, options, onSelect) {
+            const input = document.getElementById(`${baseName}Input`);
+            const dropdown = document.getElementById(`${baseName}Dropdown`);
+            const clearBtn = document.getElementById(`${baseName}Clear`);
+            let selectedValue = '';
+
+            const renderDropdown = (filterText = '') => {
+                const filtered = options.filter(opt =>
+                    opt.toLowerCase().includes(filterText.toLowerCase())
+                );
+
+                if (filtered.length === 0) {
+                    dropdown.innerHTML = '<div class="searchable-select-option no-results">No hay resultados</div>';
+                } else {
+                    dropdown.innerHTML = filtered.map(opt =>
+                        `<div class="searchable-select-option${opt === selectedValue ? ' selected' : ''}" data-value="${opt}">${opt}</div>`
+                    ).join('');
+
+                    dropdown.querySelectorAll('.searchable-select-option').forEach(option => {
+                        option.addEventListener('click', () => {
+                            selectedValue = option.dataset.value;
+                            input.value = selectedValue;
+                            dropdown.classList.remove('active');
+                            clearBtn.style.display = selectedValue ? 'block' : 'none';
+                            onSelect(selectedValue);
+                        });
+                    });
+                }
+            };
+
+            input.addEventListener('focus', () => {
+                dropdown.classList.add('active');
+                renderDropdown(input.value);
+            });
+
+            input.addEventListener('input', (e) => {
+                renderDropdown(e.target.value);
+                if (!e.target.value) {
+                    selectedValue = '';
+                    clearBtn.style.display = 'none';
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.classList.remove('active');
+                }
+            });
+
+            clearBtn.addEventListener('click', () => {
+                selectedValue = '';
+                input.value = '';
+                clearBtn.style.display = 'none';
+                renderDropdown('');
+                onSelect('');
+            });
+        }
+
+        function updateDynamicFilters(sheetType) {
+            if (sheetType === 'general') {
+                // General sheet: Año → Programa
+                const selectedYear = document.getElementById('filterYear').value;
+                const dateFrom = document.getElementById('filterDateFrom').value;
+                const dateTo = document.getElementById('filterDateTo').value;
+                const fromDate = dateFrom ? new Date(dateFrom) : new Date(1900, 0, 1);
+                const toDate = dateTo ? new Date(dateTo) : new Date(2099, 11, 31);
+                toDate.setHours(23, 59, 59, 999);
+
+                // Filter data based on current selections
+                let availableData = allData.filter(r => {
+                    const salesAmount = parseFloat((r['TOTAL VENTA *EXP COP*'] || '0').toString().replace(/[^\d.-]/g, '')) || 0;
+                    if (salesAmount <= 0 || r.ESTADO === 'Retirado') return false;
+
+                    // Apply year filter if selected
+                    if (selectedYear && r['AÑO CIERRE DE VENTA'] && r['AÑO CIERRE DE VENTA'].trim() !== selectedYear) return false;
+
+                    // Apply date filter
+                    if (r['AJUSTES VENCIMIENTO']) {
+                        const dateStr = (r['AJUSTES VENCIMIENTO'] || '').trim();
+                        const dateMatch = dateStr.match(/^(\d+)\/(\d+)\/(\d{4})$/);
+                        if (dateMatch) {
+                            const month = parseInt(dateMatch[1]) - 1;
+                            const day = parseInt(dateMatch[2]);
+                            const dateYear = parseInt(dateMatch[3]);
+                            const rowDate = new Date(dateYear, month, day);
+                            if (rowDate < fromDate || rowDate > toDate) return false;
+                        }
+                    }
+
+                    return true;
+                });
+
+                // Extract available programs from filtered data
+                const availableProgramas = [...new Set(availableData.filter(r => r.PROGRAMA).map(r => r.PROGRAMA).sort())];
+
+                // Reinitialize programa dropdown with available options
+                window.programasData = availableProgramas;
+                initializeSearchableSelect('filterProgram', availableProgramas, (selected) => {
+                    updateDynamicFilters('general');
+                    renderAllSheets();
+                });
+            } else if (sheetType === 'marketing') {
+                // Marketing sheet: Año → Campaña → Programa
+                const selectedYear = document.getElementById('filterYearMkt').value;
+                const selectedCampaign = document.getElementById('filterCampaignInput').value;
+                const dateFrom = document.getElementById('filterDateFromMkt').value;
+                const dateTo = document.getElementById('filterDateToMkt').value;
+                const fromDate = dateFrom ? new Date(dateFrom) : new Date(1900, 0, 1);
+                const toDate = dateTo ? new Date(dateTo) : new Date(2099, 11, 31);
+                toDate.setHours(23, 59, 59, 999);
+
+                // Filter data based on current selections
+                let availableData = allData.filter(r => {
+                    const salesAmount = parseFloat((r['TOTAL VENTA *EXP COP*'] || '0').toString().replace(/[^\d.-]/g, '')) || 0;
+                    if (salesAmount <= 0 || r.ESTADO === 'Retirado') return false;
+
+                    // Apply year filter if selected
+                    if (selectedYear && r['AÑO CIERRE DE VENTA'] && r['AÑO CIERRE DE VENTA'].trim() !== selectedYear) return false;
+
+                    // Apply campaign filter if selected
+                    if (selectedCampaign && (!r['CAMPAÑA( Juli)'] || r['CAMPAÑA( Juli)'].trim() !== selectedCampaign)) return false;
+
+                    // Apply date filter
+                    if (r['AJUSTES VENCIMIENTO']) {
+                        const dateStr = (r['AJUSTES VENCIMIENTO'] || '').trim();
+                        const dateMatch = dateStr.match(/^(\d+)\/(\d+)\/(\d{4})$/);
+                        if (dateMatch) {
+                            const month = parseInt(dateMatch[1]) - 1;
+                            const day = parseInt(dateMatch[2]);
+                            const dateYear = parseInt(dateMatch[3]);
+                            const rowDate = new Date(dateYear, month, day);
+                            if (rowDate < fromDate || rowDate > toDate) return false;
+                        }
+                    }
+
+                    return true;
+                });
+
+                // Extract available campaigns from filtered data (Keep "Sin Datos" as valid campaign)
+                const availableCampanas = [...new Set(availableData
+                    .filter(r => r['CAMPAÑA( Juli)'] && r['CAMPAÑA( Juli)'].trim() && r['CAMPAÑA( Juli)'] !== 'No Disponible' && !r['CAMPAÑA( Juli)'].toLowerCase().includes('n/a'))
+                    .map(r => r['CAMPAÑA( Juli)'])
+                    .sort())];
+
+                // Extract available programs from filtered data
+                const availableProgramas = [...new Set(availableData.filter(r => r.PROGRAMA).map(r => r.PROGRAMA).sort())];
+
+                // Reinitialize campaign dropdown with available options
+                window.campanasData = availableCampanas;
+                initializeSearchableSelect('filterCampaign', availableCampanas, (selected) => {
+                    updateDynamicFilters('marketing');
+                    renderMarketingSheet();
+                });
+
+                // Reinitialize programa dropdown with available options
+                window.programasMktData = availableProgramas;
+                initializeSearchableSelect('filterProgramMkt', availableProgramas, (selected) => {
+                    updateDynamicFilters('marketing');
+                    renderMarketingSheet();
+                });
+            }
+        }
+
+        function renderAllSheets() { renderGeneralSheet(); renderEstudianteSheet(); renderMarketingSheet(); }
+
+        function renderGeneralSheet() {
+            const dateFrom = document.getElementById('filterDateFrom').value;
+            const dateTo = document.getElementById('filterDateTo').value;
+            const program = document.getElementById('filterProgramInput').value;
+            const year = document.getElementById('filterYear').value;
+
+            const fromDate = dateFrom ? new Date(dateFrom) : new Date(1900, 0, 1);
+            const toDate = dateTo ? new Date(dateTo) : new Date(2099, 11, 31);
+            toDate.setHours(23, 59, 59, 999);
+
+            let filtered = allData.filter(r => {
+                // Exclude retired records, but include all others (even with zero sales)
+                if (r.ESTADO === 'Retirado') return false;
+
+                // Parse date from AJUSTES VENCIMIENTO (format: M/D/YYYY)
+                if (r['AJUSTES VENCIMIENTO']) {
+                    const dateStr = (r['AJUSTES VENCIMIENTO'] || '').trim();
+                    const dateMatch = dateStr.match(/^(\d+)\/(\d+)\/(\d{4})$/);
+                    if (dateMatch) {
+                        const month = parseInt(dateMatch[1]) - 1;
+                        const day = parseInt(dateMatch[2]);
+                        const dateYear = parseInt(dateMatch[3]);
+                        const rowDate = new Date(dateYear, month, day);
+
+                        if (rowDate < fromDate || rowDate > toDate) return false;
+                    }
+                }
+
+                if (program && r.PROGRAMA !== program) return false;
+                if (year && r['AÑO CIERRE DE VENTA'] !== year) return false;
+                return true;
+            });
+
+            // Helper function to safely parse numbers
+            const parseNumber = (val) => {
+                if (!val || val === "'" || val === '""') return 0;
+                const cleaned = val.toString().replace(/[^\d.-]/g, '');
+                const num = parseFloat(cleaned);
+                return isNaN(num) ? 0 : num;
+            };
+
+            const ventas = filtered.reduce((s, r) => s + parseNumber(r['TOTAL VENTA *EXP COP*']), 0);
+            const recaudo = filtered.reduce((s, r) => s + parseNumber(r['NETO EXPRESADO EN PESOS']), 0);
+
+            // Cartera pendiente: aplicar los mismos filtros que ventas y recaudos
+            const cartera = filtered
+                .filter(r => r['ESTADO PAGOS'] === 'PENDIENTE')
+                .reduce((s, r) => s + parseNumber(r['*A* PENDIENTE RECAUDO EXPRESADO EN PESOS']), 0);
+
+            const programas = new Set(filtered.map(r => r.PROGRAMA)).size;
+            const estudiantes = new Set(filtered.map(r => r.ESTUDIANTE)).size;
+            const ticket = estudiantes > 0 ? ventas / estudiantes : 0;
+
+            const ventasCompact = fmtCompact(ventas);
+            const recaudoCompact = fmtCompact(recaudo);
+            const carteraCompact = fmtCompact(cartera);
+            const ticketCompact = fmtCompact(ticket);
+
+            document.getElementById('kpiGrid').innerHTML = `
+                <div class="kpi-card"><div class="label">Ventas Totales</div><div class="value" data-tooltip="${ventasCompact.full}">${ventasCompact.display}</div></div>
+                <div class="kpi-card"><div class="label">Recaudado</div><div class="value" data-tooltip="${recaudoCompact.full}">${recaudoCompact.display}</div></div>
+                <div class="kpi-card"><div class="label">Cartera Pendiente</div><div class="value" data-tooltip="${carteraCompact.full}">${carteraCompact.display}</div></div>
+                <div class="kpi-card"><div class="label">Programas</div><div class="value">${programas}</div></div>
+                <div class="kpi-card"><div class="label">Estudiantes</div><div class="value">${estudiantes}</div></div>
+                <div class="kpi-card"><div class="label">Ticket Promedio</div><div class="value" data-tooltip="${ticketCompact.full}">${ticketCompact.display}</div></div>
+            `;
+
+            // Calculate sales by program
+            const byProgram = {};
+            filtered.forEach(r => { byProgram[r.PROGRAMA] = (byProgram[r.PROGRAMA] || 0) + parseNumber(r['TOTAL VENTA *EXP COP*']); });
+
+            // Filter out programs with zero sales and sort by sales amount
+            const programsWithSales = Object.keys(byProgram)
+                .filter(p => byProgram[p] > 0)
+                .sort((a, b) => byProgram[b] - byProgram[a]);
+
+            // Separate top 10 and others
+            const top10 = programsWithSales.slice(0, 10);
+            const others = programsWithSales.slice(10);
+            const othersTotal = others.reduce((sum, p) => sum + byProgram[p], 0);
+
+            // Prepare initial chart data (top 10 + OTROS if there are others)
+            let chartLabels = [...top10];
+            let chartData = top10.map(p => byProgram[p]);
+
+            if (others.length > 0) {
+                chartLabels.push('OTROS');
+                chartData.push(othersTotal);
+            }
+
+            // Store data for expansion toggle
+            window.chartVentasProgramasData = {
+                top10: top10,
+                others: others,
+                byProgram: byProgram,
+                expanded: false
+            };
+
+            // Render Ventas por Programa chart with expansion capability
+            if (charts['chartVentasProgramas']) charts['chartVentasProgramas'].destroy();
+            charts['chartVentasProgramas'] = new Chart(document.getElementById('chartVentasProgramas'), {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'Ventas',
+                        data: chartData,
+                        backgroundColor: chartLabels.map((label, idx) => label === 'OTROS' ? '#B5A0D3' : '#301063')
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const clickedIndex = elements[0].index;
+                            const clickedLabel = chartLabels[clickedIndex];
+
+                            // Only toggle if clicking on "OTROS"
+                            if (clickedLabel === 'OTROS') {
+                                const data = window.chartVentasProgramasData;
+                                data.expanded = !data.expanded;
+
+                                if (data.expanded) {
+                                    // Show all programs including others
+                                    chartLabels = programsWithSales;
+                                    chartData = programsWithSales.map(p => byProgram[p]);
+                                } else {
+                                    // Back to top 10 + OTROS
+                                    chartLabels = [...top10];
+                                    chartData = top10.map(p => byProgram[p]);
+                                    if (others.length > 0) {
+                                        chartLabels.push('OTROS');
+                                        chartData.push(othersTotal);
+                                    }
+                                }
+
+                                // Update chart
+                                charts['chartVentasProgramas'].data.labels = chartLabels;
+                                charts['chartVentasProgramas'].data.datasets[0].data = chartData;
+                                charts['chartVentasProgramas'].data.datasets[0].backgroundColor = chartLabels.map((label, idx) =>
+                                    label === 'OTROS' ? '#B5A0D3' : '#301063'
+                                );
+                                charts['chartVentasProgramas'].update();
+                            }
+                        }
+                    }
+                }
+            });
+
+        }
+
+        function renderEstudianteSheet() {
+            const student = document.getElementById('filterEstudianteInput').value;
+            const year = document.getElementById('filterYearEst').value;
+
+            // Helper function to safely parse numbers
+            const parseNumber = (val) => {
+                if (!val || val === "'" || val === '""') return 0;
+                const cleaned = val.toString().replace(/[^\d.-]/g, '');
+                const num = parseFloat(cleaned);
+                return isNaN(num) ? 0 : num;
+            };
+
+            // Initialize byProgram at function level so it's available for chart
+            let byProgram = {};
+
+            // If student selected, show specific student data
+            if (student) {
+                let data = allData.filter(r => r.ESTUDIANTE === student && r.ESTADO !== 'Retirado');
+
+                // Apply year filter if selected
+                if (year) {
+                    data = data.filter(r => r['AÑO CIERRE DE VENTA'] === year);
+                }
+
+                const estado = data.some(r => r.ESTADO === 'Activo') ? 'ACTIVO' : 'INACTIVO';
+                const programas = new Set(data.map(r => r.PROGRAMA)).size;
+
+                const vendido = data.reduce((s, r) => s + parseNumber(r['TOTAL VENTA *EXP COP*']), 0);
+                const recaudado = data.reduce((s, r) => s + parseNumber(r['NETO EXPRESADO EN PESOS']), 0);
+                const pendiente = data.reduce((s, r) => s + parseNumber(r['*A* PENDIENTE RECAUDO EXPRESADO EN PESOS']), 0);
+
+                document.getElementById('estNombre').textContent = student;
+                document.getElementById('estEstado').textContent = estado;
+                document.getElementById('estProgramas').textContent = programas;
+                const vendidoCompact = fmtCompact(vendido);
+                const recaudadoCompact = fmtCompact(recaudado);
+                const pendienteCompact = fmtCompact(pendiente);
+
+                document.getElementById('kpiGridEst').innerHTML = `
+                    <div class="kpi-card"><div class="label">Total Vendido</div><div class="value" data-tooltip="${vendidoCompact.full}">${vendidoCompact.display}</div></div>
+                    <div class="kpi-card"><div class="label">Recaudado</div><div class="value" data-tooltip="${recaudadoCompact.full}">${recaudadoCompact.display}</div></div>
+                    <div class="kpi-card"><div class="label">Pendiente</div><div class="value" data-tooltip="${pendienteCompact.full}">${pendienteCompact.display}</div></div>
+                `;
+
+                data.forEach(r => { byProgram[r.PROGRAMA] = (byProgram[r.PROGRAMA] || 0) + parseNumber(r['NETO EXPRESADO EN PESOS']); });
+
+                document.querySelector('#tablePagos tbody').innerHTML = Object.keys(byProgram).map(p => {
+                    const d = data.filter(r => r.PROGRAMA === p);
+                    const v = d.reduce((s, r) => s + parseNumber(r['TOTAL VENTA *EXP COP*']), 0);
+                    const re = d.reduce((s, r) => s + parseNumber(r['NETO EXPRESADO EN PESOS']), 0);
+                    const pe = d.reduce((s, r) => s + parseNumber(r['*A* PENDIENTE RECAUDO EXPRESADO EN PESOS']), 0);
+                    const porcentajePagado = (re/v)*100;
+                    const estaPagado = pe === 0;
+                    return `<tr><td>${p}</td><td>${fmt(v)}</td><td>${fmt(re)}</td><td>${fmt(pe)}</td><td>${pct(porcentajePagado)}</td><td><span style="background:${estaPagado?'#27AE60':'#E74C3C'};color:white;padding:2px 6px;border-radius:3px;font-size:11px;">${estaPagado?'Pagado':'Pendiente'}</span></td></tr>`;
+                }).join('');
+            } else {
+                // No student selected: clear the specific student KPIs and history
+                document.getElementById('estNombre').textContent = '-';
+                document.getElementById('estEstado').textContent = '-';
+                document.getElementById('estProgramas').textContent = '-';
+                document.getElementById('kpiGridEst').innerHTML = '';
+                document.querySelector('#tablePagos tbody').innerHTML = '';
+            }
+
+            // Helper function to get validation icon and status
+            const getValidationStatus = (totalVenta, recaudoR) => {
+                if (totalVenta === 0) return { icon: '✕', color: '#E74C3C', label: 'Inconsistencia' };
+                const difference = ((recaudoR - totalVenta) / totalVenta) * 100;
+                if (difference === 0) {
+                    return { icon: '✓', color: '#27AE60', label: 'Válido' };
+                } else if (difference >= -5 && difference <= 5) {
+                    return { icon: '!', color: '#F39C12', label: 'Margen ±5%' };
+                } else {
+                    return { icon: '✕', color: '#E74C3C', label: 'Inconsistencia' };
+                }
+            };
+
+            // Tabla de validación de consistencia de ventas
+            // Si hay estudiante seleccionado, mostrar solo sus datos; si no, mostrar todos
+            let validationData = student
+                ? allData.filter(r => r.ESTUDIANTE === student && r.ESTADO !== 'Retirado')
+                : allData.filter(r => r.ESTADO !== 'Retirado');
+
+            // Apply year filter if selected
+            if (year) {
+                validationData = validationData.filter(r => r['AÑO CIERRE DE VENTA'] === year);
+            }
+
+            const validationRows = validationData.map(r => {
+                const totalVenta = parseNumber(r['TOTAL VENTA *EXP COP*']);
+                const recaudoR = parseNumber(r['$R & PROY exp pesos']);
+                const difference = totalVenta === 0 ? 0 : ((recaudoR - totalVenta) / totalVenta) * 100;
+                const status = getValidationStatus(totalVenta, recaudoR);
+                return {
+                    estudiante: r.ESTUDIANTE,
+                    programa: r.PROGRAMA,
+                    totalVenta,
+                    recaudoR,
+                    difference,
+                    status
+                };
+            });
+
+            // Group by estudiante and programa
+            const validationByEstAndProg = {};
+            validationRows.forEach(row => {
+                const key = `${row.estudiante}|${row.programa}`;
+                if (!validationByEstAndProg[key]) {
+                    validationByEstAndProg[key] = {
+                        estudiante: row.estudiante,
+                        programa: row.programa,
+                        totalVenta: 0,
+                        recaudoR: 0,
+                        count: 0
+                    };
+                }
+                validationByEstAndProg[key].totalVenta += row.totalVenta;
+                validationByEstAndProg[key].recaudoR += row.recaudoR;
+                validationByEstAndProg[key].count += 1;
+            });
+
+            // Group by estudiante first
+            const groupedByEstudiante = {};
+            Object.values(validationByEstAndProg).forEach(row => {
+                if (!groupedByEstudiante[row.estudiante]) {
+                    groupedByEstudiante[row.estudiante] = [];
+                }
+                groupedByEstudiante[row.estudiante].push(row);
+            });
+
+            // Generate table rows with estudiante grouping
+            const tableHTML = Object.entries(groupedByEstudiante)
+                .sort(([estA], [estB]) => estA.localeCompare(estB))
+                .map(([estudiante, rows]) => {
+                    return rows.map((row, index) => {
+                        const difference = row.totalVenta === 0 ? 0 : ((row.recaudoR - row.totalVenta) / row.totalVenta) * 100;
+                        const status = getValidationStatus(row.totalVenta, row.recaudoR);
+                        const showEstudianteName = index === 0;
+                        return `<tr>
+                            <td>${showEstudianteName ? estudiante : ''}</td>
+                            <td>${row.programa}</td>
+                            <td>${fmt(row.totalVenta)}</td>
+                            <td>${fmt(row.recaudoR)}</td>
+                            <td>${row.totalVenta === 0 ? '-' : (difference >= 0 ? '+' : '') + difference.toFixed(2)}%</td>
+                            <td><span style="background:${status.color};color:white;padding:4px 8px;border-radius:3px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;"><i class="fas fa-${status.icon === '✓' ? 'check-circle' : status.icon === '!' ? 'exclamation-triangle' : 'times-circle'}"></i>${status.label}</span></td>
+                        </tr>`;
+                    }).join('');
+                }).join('');
+
+            document.querySelector('#tableValidacionVentas tbody').innerHTML = tableHTML;
+
+            if (charts['chartEstProgramas']) charts['chartEstProgramas'].destroy();
+            charts['chartEstProgramas'] = new Chart(document.getElementById('chartEstProgramas'), {
+                type: 'doughnut',
+                data: { labels: Object.keys(byProgram), datasets: [{ data: Object.values(byProgram), backgroundColor: ['#301063', '#5C3C8A', '#8B6FB3', '#B5A0D3', '#C0BECB'] }] },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function renderMarketingSheet() {
+            const dateFrom = document.getElementById('filterDateFromMkt').value;
+            const dateTo = document.getElementById('filterDateToMkt').value;
+            const program = document.getElementById('filterProgramMktInput').value;
+            const year = document.getElementById('filterYearMkt').value;
+            const campaign = document.getElementById('filterCampaignInput').value;
+
+            const fromDate = dateFrom ? new Date(dateFrom) : new Date(1900, 0, 1);
+            const toDate = dateTo ? new Date(dateTo) : new Date(2099, 11, 31);
+            toDate.setHours(23, 59, 59, 999);
+
+            // Helper function to safely parse numbers
+            const parseNumber = (val) => {
+                if (!val || val === "'" || val === '""') return 0;
+                const cleaned = val.toString().replace(/[^\d.-]/g, '');
+                const num = parseFloat(cleaned);
+                return isNaN(num) ? 0 : num;
+            };
+
+            let filtered = allData.filter(r => {
+                if (r.ESTADO === 'Retirado') return false;
+                // Allow "Sin Datos" as valid campaign; only exclude empty, "No Disponible", and "n/a"
+                if (!r['CAMPAÑA( Juli)'] || r['CAMPAÑA( Juli)'] === 'No Disponible' || r['CAMPAÑA( Juli)'].toLowerCase().includes('n/a')) return false;
+                if (campaign && r['CAMPAÑA( Juli)'] !== campaign) return false;
+                if (program && r.PROGRAMA !== program) return false;
+                if (year && r['AÑO CIERRE DE VENTA'] !== year) return false;
+
+                // Date filtering using AJUSTES VENCIMIENTO (format: M/D/YYYY)
+                if (r['AJUSTES VENCIMIENTO']) {
+                    const dateStr = (r['AJUSTES VENCIMIENTO'] || '').trim();
+                    const dateMatch = dateStr.match(/^(\d+)\/(\d+)\/(\d{4})$/);
+                    if (dateMatch) {
+                        const month = parseInt(dateMatch[1]) - 1;
+                        const day = parseInt(dateMatch[2]);
+                        const dateYear = parseInt(dateMatch[3]);
+                        const rowDate = new Date(dateYear, month, day);
+
+                        if (rowDate < fromDate || rowDate > toDate) return false;
+                    }
+                }
+
+                return true;
+            });
+
+            // Ventas totales de la empresa (todas las ventas, sin importar campaña)
+            const ventasTotalEmpresa = allData.filter(r => r.ESTADO !== 'Retirado').reduce((s, r) => s + parseNumber(r['TOTAL VENTA *EXP COP*']), 0);
+
+            // Ventas del conjunto filtrado (con campañas válidas)
+            const ventasTotal = filtered.reduce((s, r) => s + parseNumber(r['TOTAL VENTA *EXP COP*']), 0);
+            const recaudoTotal = filtered.reduce((s, r) => s + parseNumber(r['NETO EXPRESADO EN PESOS']), 0);
+            const ventasCamp = filtered.filter(r => r['CAMPAÑA( Juli)']).reduce((s, r) => s + parseNumber(r['TOTAL VENTA *EXP COP*']), 0);
+
+            // Efectividad: impacto de las campañas vs ventas totales de la empresa
+            const efectividad = ventasTotalEmpresa > 0 ? (ventasCamp / ventasTotalEmpresa) * 100 : 0;
+            const campCount = new Set(filtered.filter(r => r['CAMPAÑA( Juli)']).map(r => r['CAMPAÑA( Juli)'])).size;
+            const estCount = new Set(filtered.filter(r => r['CAMPAÑA( Juli)']).map(r => r.ESTUDIANTE)).size;
+
+            const ventasCampCompact = fmtCompact(ventasCamp);
+            const recaudoTotalCompact = fmtCompact(recaudoTotal);
+
+            document.getElementById('kpiGridMkt').innerHTML = `
+                <div class="kpi-card"><div class="label">Ventas Campaña</div><div class="value" data-tooltip="${ventasCampCompact.full}">${ventasCampCompact.display}</div></div>
+                <div class="kpi-card"><div class="label">Recaudo</div><div class="value" data-tooltip="${recaudoTotalCompact.full}">${recaudoTotalCompact.display}</div></div>
+                <div class="kpi-card"><div class="label">Efectividad</div><div class="value">${pct(efectividad)}</div></div>
+                <div class="kpi-card"><div class="label">Campañas</div><div class="value">${campCount}</div></div>
+                <div class="kpi-card"><div class="label">Estudiantes</div><div class="value">${estCount}</div></div>
+            `;
+
+            const byCamp = {};
+            filtered.forEach(r => {
+                if (!r['CAMPAÑA( Juli)']) return;
+                if (!byCamp[r['CAMPAÑA( Juli)']]) byCamp[r['CAMPAÑA( Juli)']] = 0;
+                byCamp[r['CAMPAÑA( Juli)']] += parseNumber(r['TOTAL VENTA *EXP COP*']);
+            });
+            const allCamps = Object.keys(byCamp).sort((a, b) => byCamp[b] - byCamp[a]);
+
+            // Top 10 + OTRAS for Ventas por Campaña
+            const top10Camps = allCamps.slice(0, 10);
+            const othersCamps = allCamps.slice(10);
+            const othersCampsTotal = othersCamps.reduce((sum, c) => sum + byCamp[c], 0);
+
+            let labelsVentas = [...top10Camps];
+            let dataVentas = top10Camps.map(c => byCamp[c]);
+            if (othersCamps.length > 0) {
+                labelsVentas.push('OTRAS');
+                dataVentas.push(othersCampsTotal);
+            }
+
+            window.chartVentasCampanasData = {
+                top10: top10Camps,
+                others: othersCamps,
+                byCamp: byCamp,
+                expandedVentas: false
+            };
+
+            if (charts['chartVentasCampanas']) charts['chartVentasCampanas'].destroy();
+            charts['chartVentasCampanas'] = new Chart(document.getElementById('chartVentasCampanas'), {
+                type: 'bar',
+                data: {
+                    labels: labelsVentas,
+                    datasets: [{
+                        label: 'Ventas',
+                        data: dataVentas,
+                        backgroundColor: labelsVentas.map((label, idx) => label === 'OTRAS' ? '#B5A0D3' : '#5C3C8A')
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const clickedIndex = elements[0].index;
+                            const clickedLabel = labelsVentas[clickedIndex];
+                            if (clickedLabel === 'OTRAS') {
+                                const data = window.chartVentasCampanasData;
+                                data.expandedVentas = !data.expandedVentas;
+
+                                if (data.expandedVentas) {
+                                    labelsVentas = allCamps;
+                                    dataVentas = allCamps.map(c => byCamp[c]);
+                                } else {
+                                    labelsVentas = [...top10Camps];
+                                    dataVentas = top10Camps.map(c => byCamp[c]);
+                                    if (othersCamps.length > 0) {
+                                        labelsVentas.push('OTRAS');
+                                        dataVentas.push(othersCampsTotal);
+                                    }
+                                }
+
+                                charts['chartVentasCampanas'].data.labels = labelsVentas;
+                                charts['chartVentasCampanas'].data.datasets[0].data = dataVentas;
+                                charts['chartVentasCampanas'].data.datasets[0].backgroundColor = labelsVentas.map((label, idx) =>
+                                    label === 'OTRAS' ? '#B5A0D3' : '#5C3C8A'
+                                );
+                                charts['chartVentasCampanas'].update();
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Top 5 + OTRAS for Efectividad
+            const top5Camps = allCamps.slice(0, 5);
+            const others5Camps = allCamps.slice(5);
+            const others5CampsTotal = others5Camps.reduce((sum, c) => sum + byCamp[c], 0);
+
+            let labelsEfec = [...top5Camps];
+            let dataEfec = top5Camps.map(c => byCamp[c]);
+            if (others5Camps.length > 0) {
+                labelsEfec.push('OTRAS');
+                dataEfec.push(others5CampsTotal);
+            }
+
+            window.chartEfectividadData = {
+                top5: top5Camps,
+                others5: others5Camps,
+                byCamp: byCamp,
+                expandedEfec: false
+            };
+
+            if (charts['chartEfectividad']) charts['chartEfectividad'].destroy();
+            charts['chartEfectividad'] = new Chart(document.getElementById('chartEfectividad'), {
+                type: 'pie',
+                data: {
+                    labels: labelsEfec,
+                    datasets: [{
+                        data: dataEfec,
+                        backgroundColor: ['#301063', '#5C3C8A', '#8B6FB3', '#B5A0D3', '#C0BECB']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const clickedIndex = elements[0].index;
+                            const clickedLabel = labelsEfec[clickedIndex];
+                            if (clickedLabel === 'OTRAS') {
+                                const data = window.chartEfectividadData;
+                                data.expandedEfec = !data.expandedEfec;
+
+                                if (data.expandedEfec) {
+                                    labelsEfec = allCamps;
+                                    dataEfec = allCamps.map(c => byCamp[c]);
+                                } else {
+                                    labelsEfec = [...top5Camps];
+                                    dataEfec = top5Camps.map(c => byCamp[c]);
+                                    if (others5Camps.length > 0) {
+                                        labelsEfec.push('OTRAS');
+                                        dataEfec.push(others5CampsTotal);
+                                    }
+                                }
+
+                                charts['chartEfectividad'].data.labels = labelsEfec;
+                                charts['chartEfectividad'].data.datasets[0].data = dataEfec;
+                                charts['chartEfectividad'].update();
+                            }
+                        }
+                    }
+                }
+            });
+
+            document.querySelector('#tableCampanas tbody').innerHTML = allCamps.map(c => {
+                const est = new Set(filtered.filter(r => r['CAMPAÑA( Juli)'] === c).map(r => r.ESTUDIANTE)).size;
+                const efe = ventasTotal > 0 ? (byCamp[c] / ventasTotal) * 100 : 0;
+                return `<tr><td>${c}</td><td>${est}</td><td>${fmt(byCamp[c])}</td><td>${fmt(byCamp[c])}</td><td>${pct(efe)}</td></tr>`;
+            }).join('');
+        }
+
+        async function refreshData() { allData = []; lastCacheTime = 0; await loadData(); renderAllSheets(); }
+        function exportData() {
+            let csv = 'ESTUDIANTE,PROGRAMA,VENTAS COP,RECAUDADO COP,PENDIENTE COP\n';
+            allData.forEach(r => { csv += `"${r.ESTUDIANTE}","${r.PROGRAMA}",${r['TOTAL VENTA *EXP COP*']||0},${r['NETO EXPRESADO EN PESOS']||0},${r['PENDIENTE RECAUDO INICIAL EXPRESADO TODO EN PESOS']||0}\n`; });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'dashboard-export.csv';
+            a.click();
+        }
+    </script>
+</body>
+</html>
