@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/creadores-de-prosperidad-dashboard/static/css/main.390c4f21.css",
+    "main.js": "/creadores-de-prosperidad-dashboard/static/js/main.aa27ae8c.js",
+    "index.html": "/creadores-de-prosperidad-dashboard/index.html",
+    "main.390c4f21.css.map": "/creadores-de-prosperidad-dashboard/static/css/main.390c4f21.css.map",
+    "main.aa27ae8c.js.map": "/creadores-de-prosperidad-dashboard/static/js/main.aa27ae8c.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.390c4f21.css",
+    "static/js/main.aa27ae8c.js"
+  ]
+}
